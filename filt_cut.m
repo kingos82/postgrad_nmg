@@ -4,6 +4,8 @@ clear all
 close all
 clc
 
+%%% hello world
+
 load('IM_SPK021.mat')
 if exist('AI_SPK')==0; AI_SPK=AI3X3_SPK; AI_dat= AI3X3_dat; end
 AI_img=double(AI_dat); AI_img=AI_img-repmat(mean(AI_img,2),1,2500);
