@@ -41,50 +41,67 @@ dly=16; p_sz=50;
  G=AIc; i=3;
  sz=1:50;
  [C,I] = max(abs(G(i,:))); [row,col]=find(reshape([1:2500],50,50)==I);
- mt=reshape(G(i,:),50,50); %STA(sz, sz);
+ mtc=reshape(G(i,:),50,50); %STA(sz, sz);
  
  x0(1)=G(i,I);%%%amplitude
  x0(3)=col;
  x0(4)=row;
  x0(2)= 1;%sd
  
- outp = fminsearch(@(x) gf0(x,mt, []), x0);
+ outp = fminsearch(@(x) gf0(x,mtc, []), x0);
  
- A=outp(1);
+ Aci=outp(1);
  x1=outp(3);
  y1=outp(4);
- sx=outp(2);
- sy=sx;
+ sc=outp(2);
  
- %% fit gaussian center temporal filter
+ [xi, yi] = meshgrid(1:length(mtc));
+ xc=((xi-x1).^2)./(2.*sc.^2);
+ yc=((yi-y1).^2)./(2.*sc.^2);
+ Gc=Aci.*exp(-(xc+yc));%./(2.*pi.*sx.*sy)
+ 
+ 
+ %% calculate surround filter
+ mts=(mtc-Gc); 
+
+ outp = fminsearch(@(x) gf0(x,mts,[x1 y1]), [-Aci./2 2.*sc]);
+ 
+ Asi=outp(1);
+ ss=outp(2);
+ 
+ xs=((xi-x1).^2)./(2.*ss.^2);
+ ys=((yi-y1).^2)./(2.*ss.^2);
+ Gs=Asi.*exp(-(xs+ys));%./(2.*pi.*sx.*sy)
+ 
+ 
+ %% temporal filter
  prmtz=[]; outpi=outp; Gf =zeros(dly, 2500);
  
  
  for k=1:dlyv
+     
      mtx=reshape(G(v(k),:),50,50);
-     outp = fminsearch(@(x) gf0(x,mtx,[x1 y1 sx]), A);
-     prmtz=[prmtz; outp];
-     Ax=outp(1); 
-     [xi, yi] = meshgrid(1:length(mtx));
-     xp=((xi-x1).^2)./(2.*sx.^2);
-     yp=((yi-y1).^2)./(2.*sy.^2);
-     n=Ax.*exp(-(xp+yp));%./(2.*pi.*sx.*sy)
-     Gf(v(k),:)=reshape(n,1,[]);
+     A=mtx(round(y1),round(x1));
+     outp = fminsearch(@(x) gf0(x,mtx,[x1 y1 sc]), A);
+     Ac(k)=outp(1); 
+     Gc=Ac(k).*exp(-(xc+yc));%./(2.*pi.*sx.*sy)
+     mtx1=mtx-Gc;
+     outp = fminsearch(@(x) gf0(x,mtx1,[x1 y1 ss]), -A./2);
+     As(k)=outp(1);
+     Gs=As(k).*exp(-(xs+ys));
+     Gf(v(k),:)=reshape(Gc+Gs,1,[]);
+%      figure(k)
+%      subplot(2,2,1); surf(mtx);
+%      subplot(2,2,2); surf(Gc+Gs);
+%      subplot(2,2,3); surf(mtx1-Gc)
+%      subplot(2,2,4); surf(mtx1-(Gc+Gs))
+%      pause
+     
+     
+     
+     
  end
  
- %% add surround filter
-  mtx=reshape((G(i,:)-Gf(i,:)),50,50); %STA(sz, sz);
-
- 
- outp = fminsearch(@(x) gf0(x,mtx,[x1 y1]), [-A./2 2.*sx]);
- 
- As=outp(1);
- sxf=outp(2);
- syf=sxf;
- 
-     xs=((xi-x1).^2)./(2.*outp(2).^2);
-     ys=((yi-y1).^2)./(2.*outp(2).^2);
-     ns=outp(1).*exp(-(xs+ys));%./(2.*pi.*sx.*sy)
  
  
  %% calculate projections
@@ -107,35 +124,43 @@ dly=16; p_sz=50;
  
 %% plot 
 
-     subplot(2,2,1)
-    plot( AIG,   mean(AI_SPK), ' *', 'color', 'b')  
-    hold on; plot( cAIG{1,2}, eAIG, '-rd'); title('AIG')
 
-         subplot(2,2,2)
-    plot( AIA,   mean(AI_SPK), ' *', 'color', 'b')  
-    hold on; plot( cAIA{1,2}, eAIA, '-rd'); title('AIA')
+   for k=1:dlyv
+     figure(1); subplot(4,4,v(k)); imagesc(reshape(Gf(v(k),:),p_sz,p_sz)); colormap(gray); 
+      title(['A=' num2str((k),'%10.2f')])
+     figure(4); subplot(4,4,v(k)); imagesc(reshape(AIc(k,:),p_sz,p_sz)); colormap(gray)
+     figure(5); subplot(4,4,v(k)); imagesc(reshape(AI_flt(k,:),p_sz,p_sz)); colormap(gray)
+   end
 
- 
+%      subplot(2,2,1)
+%     plot( AIG,   mean(AI_SPK), ' *', 'color', 'b')  
+%     hold on; plot( cAIG{1,2}, eAIG, '-rd'); title('AIG')
 % 
-%n=x(1).*fspecial('gaussian', length(sz), x(2)) +x(3);
-figure
- subplot(2,2,1)
- surf(mt)
- title('data')
- 
- subplot(2,2,2)
- surf(reshape(Gf(3,:),50,50)+ns)
- title('fit')
- 
- subplot(2,2,3)
- surf(mt-(reshape(Gf(3,:),50,50)+ns))
- title('data-fit')
- 
- subplot(2,2,4)
- n=reshape(Gf(3,:),50,50);
- plot(1:length(sz), [mt(round(y1),:); n(round(y1),:); mt(:,round(x1))'; n(:,round(x1))'])
- title('x section')
- 
+%          subplot(2,2,2)
+%     plot( AIA,   mean(AI_SPK), ' *', 'color', 'b')  
+%     hold on; plot( cAIA{1,2}, eAIA, '-rd'); title('AIA')
+% 
+%  
+% % 
+% %n=x(1).*fspecial('gaussian', length(sz), x(2)) +x(3);
+% figure
+%  subplot(2,2,1)
+%  surf(mt)
+%  title('data')
+%  
+%  subplot(2,2,2)
+%  surf(reshape(Gf(3,:),50,50)+ns)
+%  title('fit')
+%  
+%  subplot(2,2,3)
+%  surf(mt-(reshape(Gf(3,:),50,50)+ns))
+%  title('data-fit')
+%  
+%  subplot(2,2,4)
+%  n=reshape(Gf(3,:),50,50);
+%  plot(1:length(sz), [mt(round(y1),:); n(round(y1),:); mt(:,round(x1))'; n(:,round(x1))'])
+%  title('x section')
+%  
 %    %% projections from orginal filter estimation
 % % % %  prjz=NI_img*NIc';
 % % % %  prj=zeros(size(prjz));
