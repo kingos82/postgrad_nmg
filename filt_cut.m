@@ -132,13 +132,14 @@ dly=16; p_sz=50;
      figure(5); subplot(4,4,v(k)); imagesc(reshape(AI_flt(k,:),p_sz,p_sz)); colormap(gray)
    end
 
-%      subplot(2,2,1)
-%     plot( AIG,   mean(AI_SPK), ' *', 'color', 'b')  
-%     hold on; plot( cAIG{1,2}, eAIG, '-rd'); title('AIG')
-% 
-%          subplot(2,2,2)
-%     plot( AIA,   mean(AI_SPK), ' *', 'color', 'b')  
-%     hold on; plot( cAIA{1,2}, eAIA, '-rd'); title('AIA')
+   figure
+     subplot(2,2,1)
+    plot( AIG,   mean(AI_SPK), ' *', 'color', 'b')  
+    hold on; plot( cAIG{1,2}, eAIG, '-rd'); title('AIG')
+
+         subplot(2,2,2)
+    plot( AIA,   mean(AI_SPK), ' *', 'color', 'b')  
+    hold on; plot( cAIA{1,2}, eAIA, '-rd'); title('AIA')
 % 
 %  
 % % 
