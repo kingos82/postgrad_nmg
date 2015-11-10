@@ -44,7 +44,7 @@ for cnum=1:108
         [c, lags]=xcorr(AIC, mean(AI_SPK)','coeff');
         CCc(j==indx)=max(abs(c));
     end
-    save(['C:\Users\Administrator\Dropbox\EXP_DATA_and_NLZ_CODE\Data_root\xcorrelation\CC' num2str(cnum, '%03i') '.mat'], 'CCc');
+    save()
 end
 % load('CCc.mat')
 % AIc=AIf; AIc(CCc>=cmx)=0;
